@@ -12,10 +12,6 @@ import numpy as np
 import porepy as pp
 import scipy.sparse as sps
 
-import reaktoro.reaktoro4py as rt
-from update_param import calulate_mineral_volume
-import pandas as pd
-
 import os
 from pathlib import Path
 import pickle
@@ -247,73 +243,3 @@ def save_mdg(mdg, folder_name=None, file_name=None):
 
     # Save
     write_pickle(mdg_list, mdg_name)
-
-
-def store_chem_values_1d(chemical_solver, mdg, current_time=None):
-
-    sd = mdg.subdomains(dim=1)[0]
-
-    assert sd.dim == 1, print("Should be 1d")
-
-    to_save_dict = {}
-
-    # The x-axis
-    #x = np.linspace(0, 1, sd.num_cells)
-    x = sd.cell_centers[0]
-    # Loop over the phases
-    for phase in chemical_solver.chem_system.phases():
-        # print(phase.name())
-        if phase.name() == "AqueousPhase":
-            # Loop over the species
-            for species in phase.species():
-                # Get the molal concentation
-
-                conc = np.zeros(x.size)
-
-                # Loop over the grid points
-                for i in range(sd.num_cells):
-                    aqprops = rt.AqueousProps(chemical_solver.states[i])
-                    conc[i] = aqprops.speciesMolality(species.name())
-                # end i-loop
-
-                # Put in dictionary
-                to_save_dict.update({species.name(): conc})
-
-        else:  # Minerals
-
-            # Total mineral volume
-            tot_volume = calulate_mineral_volume(chemical_solver, mdg)
-
-            # Loop over the species
-            for species in phase.species():
-                # Get the molal concentation
-
-                conc = np.zeros(x.size)
-
-                # Loop over the grid points
-                for i in range(sd.num_cells):
-                    props = chemical_solver.states[i].props()
-                    # Calculate the mineral volumes, in the indivdual cell
-
-                    if tot_volume[i] < 1e-6:
-                        conc[i] = 0
-                    else:
-                        conc[i] = (
-                            props.phaseProps(species.name()).volume().val()
-                            * 100
-                            / tot_volume[i]
-                        )
-                    # end if-else
-
-                # end i-loop
-
-                # Put in dictionary
-                to_save_dict.update({species.name(): conc})
-        # end if-else
-    # end phase loop
-    
-    to_save_dict.update({"x": x})
-    df = pd.DataFrame(to_save_dict)
-    name = "conc_vals_equilibrium_" + str(int(current_time))+".xlsx"
-    
-    df.to_excel(name, index=False)
