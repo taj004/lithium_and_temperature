@@ -79,10 +79,9 @@ for sd, d in mdg.subdomains(return_data=True):
 
     # --------------------------------- #
 
-    # Initial porosity, aperture and permeablity  
+    # Porosity, aperture and permeablity  
     
     aperture = constant_params.open_aperture()  
-    
     specific_volume = np.power(aperture, mdg.dim_max() - sd.dim)
     
     if sd.dim==mdg.dim_max():   
@@ -94,7 +93,6 @@ for sd, d in mdg.subdomains(return_data=True):
     # end if
     
     Kxx = K * specific_volume / constant_params.dynamic_viscosity() 
-    
     perm = pp.SecondOrderTensor(kxx = Kxx)
 
     # Initial guess for Darcy flux    
@@ -181,7 +179,7 @@ for sd, d in mdg.subdomains(return_data=True):
 
         d[pp.PARAMETERS][transport_kw].update(
             {
-                "time_step": 1 * pp.YEAR,  # s,
+                "time_step": 1 * pp.YEAR, # s
                 "current_time": 0,
                 "final_time": 60 * pp.YEAR,
                 "constant_time_step": True
@@ -214,7 +212,7 @@ for sd, d in mdg.subdomains(return_data=True):
             "sd_index": ii * unity,
             pressure: pressure_state,
             temperature: temp_state,
-            tracer: tracer_state , # 0 * unity,
+            tracer: tracer_state , 
             pp.ITERATE: {
                 pressure: pressure_state,
                 temperature: temp_state,
@@ -224,7 +222,7 @@ for sd, d in mdg.subdomains(return_data=True):
     )
     if sd.dim < 3:
         ii +=1
-        
+    # end if
 # end sd,d-loop
 
 set_param.set_bc_param_3d(mdg)
@@ -318,14 +316,12 @@ equation_system.set_variable_values(
     additive=False
     )
 
-
 update_param.update_darcy(equation_system)
 eqs.remove_equations(eqs.eq_names)
 
  #%% Prepere for exporting
 
-fields = [pressure, "sd_index", 
-          tracer, temperature]
+fields = [pressure, "sd_index", tracer, temperature]
 
 if len(mdg.subdomains(dim=2)) == 39:
     folder_name = "3d/without_extra/"
@@ -338,11 +334,10 @@ if not os.path.exists(folder_name):
 # end if
 export = pp.Exporter(mdg, file_name="vars", folder_name=folder_name)
 
-
 def save_array(array, kw, time):
     save_name = folder_name + kw + "_at_time_" + str(time)
     np.save(file=save_name, arr=array)
-    
+# end function
 
 #%% Preper for time loop
 

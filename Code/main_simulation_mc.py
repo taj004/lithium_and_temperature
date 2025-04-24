@@ -22,10 +22,12 @@ import set_param
         
 # Generate the fracture network, using the P21 condition
 num_fracs = np.array(
-    [8, 30, 105] # it is set up to run one density at the time; if you want to run several at one time, that is at your own risk 
+    [8] #, 30, 105] # set up to run one density at the time; if you want to run several at one time, that is at your own risk 
     )
 
-mesh_size = np.array([70, 400, 2500])
+mesh_size = np.array(
+    [70] # , 400, 2500]
+    )
 
 # For stability purposes with the high-performance computer at UiB,
 # the MC-simulation is split in two parts. 
@@ -42,14 +44,14 @@ for ii in range(num_fracs.size):
         np.random.seed(4)  
         jj = 0
         num_realisation = 7000
-        
     elif run_nr == 2:
         np.random.seed(5)
         jj = 7000       
         num_realisation = 10000  
     else: 
         raise ValueError("Unknown run number")
-
+    # end if
+    
     while jj < num_realisation :
         print(f"Start density {num_fracs[ii]}, realisation nr {jj}")
         # Initialize variables related to the domain
@@ -57,14 +59,15 @@ for ii in range(num_fracs.size):
         
         # Define mdg, which is [0, 3] km x [0,2] km
         mesh_args={"mesh_size_frac" : mesh_size[ii],
-                   "mesh_size_min"  : mesh_size[ii], # 190.0,
-                   "mesh_size_bound": mesh_size[ii], # 190.0
+                   "mesh_size_min"  : mesh_size[ii], 
+                   "mesh_size_bound": mesh_size[ii], 
                    }
         
         scale = 1e3
         domain = {"xmin": 0 * scale, "xmax": 3 * scale, 
                   "ymin": 0 * scale, "ymax": 2 * scale} 
-    
+        
+        # Make fracture networks 
         ff=[]
         for kk in range(num_fracs[ii]):
             
@@ -76,7 +79,7 @@ for ii in range(num_fracs.size):
             
             # The length
             
-            # expected
+            # Expected value
             e_l = 500.0 # m
             s_l = 200.0 #np.sqrt(10000) # m
             
@@ -179,7 +182,7 @@ for ii in range(num_fracs.size):
             
                 # --------------------------------- #
             
-                # Initial porosity, aperture and permeablity  
+                # Porosity, aperture and permeablity  
                 if sd.dim == mdg.dim_max():
                     aperture = 1.0
                 else: 
@@ -197,11 +200,10 @@ for ii in range(num_fracs.size):
                 # end if
                 
                 Kxx = K * specific_volume  / constant_params.dynamic_viscosity() 
-                
                 perm = pp.SecondOrderTensor(kxx = Kxx)
             
                 # Initial guess for Darcy flux    
-                init_darcy_flux = np.zeros(sd.num_faces)   # m/s
+                init_darcy_flux = np.zeros(sd.num_faces) # m/s
                     
                 # Densities, heat capacity and conduction
                 solid_density = 2750.0 
@@ -277,7 +279,7 @@ for ii in range(num_fracs.size):
             
                     d[pp.PARAMETERS][transport_kw].update(
                         {
-                            "time_step": 1.5 * pp.YEAR,  # s
+                            "time_step": 1.5 * pp.YEAR, # s
                             "current_time": 0.0,
                             "final_time": 60 * pp.YEAR,
                             "constant_time_step": True
@@ -536,6 +538,7 @@ for ii in range(num_fracs.size):
                             )          
                         j+=1
                     # end if
+                # end if
                 
                 # Get tracer in production point
                 tracer_var = data[pp.STATE][tracer]
